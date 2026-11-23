@@ -1,0 +1,11 @@
+{
+  "name": "idea-lab-marketplace",
+  "owner": { "name": "Local" },
+  "plugins": [
+    {
+      "name": "idea-lab",
+      "source": "./plugins/idea-lab",
+      "description": "Multi-agent idea evaluation: blind research, evidence audit, structured debate, decision memo."
+    }
+  ]
+}

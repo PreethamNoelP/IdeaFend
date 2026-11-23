@@ -1,0 +1,13 @@
+{
+  "name": "idea-lab",
+  "version": "0.3.0",
+  "description": "Parallel multi-agent toolkit for evaluating ideas: blind research, evidence audit, structured debate, simulated customer panels, red-team pre-mortems and discovery scouting, with enforced web and file safety guards.",
+  "keywords": [
+    "product",
+    "research",
+    "debate",
+    "validation",
+    "agents",
+    "security"
+  ]
+}
