@@ -1,0 +1,27 @@
+{
+  "block_private_hosts": true,
+  "block_ip_hosts": true,
+  "block_url_shorteners": true,
+  "block_executable_extensions": true,
+  "block_credentials_in_url": true,
+  "block_punycode_hosts": true,
+  "max_url_length": 500,
+  "respect_robots_txt": true,
+  "do_not_fetch_domains": ["linkedin.com", "facebook.com", "instagram.com", "tiktok.com"],
+  "allowlist_mode": false,
+  "allowed_domains": [],
+  "url_shorteners": ["bit.ly", "t.co", "tinyurl.com", "goo.gl", "ow.ly", "is.gd", "buff.ly", "rebrand.ly", "cutt.ly", "shorturl.at", "lnkd.in", "t.ly"],
+  "block_dns_rebinding_domains": true,
+  "dns_rebinding_domains": ["nip.io", "sslip.io", "xip.io", "traefik.me", "lvh.me", "localtest.me", "vcap.me"],
+  "blocked_extensions": [".exe", ".msi", ".dmg", ".pkg", ".apk", ".bat", ".cmd", ".sh", ".ps1", ".jar", ".scr", ".dll", ".so", ".bin", ".iso", ".deb", ".rpm", ".vbs", ".zip", ".tar", ".gz", ".tgz", ".rar", ".7z"],
+  "secret_patterns": [
+    "AKIA[0-9A-Z]{16}",
+    "ghp_[A-Za-z0-9]{30,}",
+    "github_pat_[A-Za-z0-9_]{20,}",
+    "(?<![A-Za-z0-9])sk-(?:proj-|ant-)?[A-Za-z0-9_-]{32,}",
+    "xox[baprs]-[A-Za-z0-9-]{10,}",
+    "-----BEGIN [A-Z ]*PRIVATE KEY-----",
+    "AIza[0-9A-Za-z_-]{30,}",
+    "eyJ[A-Za-z0-9_-]{10,}\\.eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}"
+  ]
+}

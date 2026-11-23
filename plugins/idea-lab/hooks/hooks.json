@@ -1,0 +1,35 @@
+{
+  "description": "Idea-lab guards: web/URL safety, file safety during sessions, evidence gate.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "WebFetch|WebSearch|mcp__.*(exa|fetch|crawl|scrape|browse|search).*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pyrun.sh\" guard-web.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|Write|Edit|MultiEdit|NotebookEdit|NotebookRead",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pyrun.sh\" guard-files.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/require-evidence.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
