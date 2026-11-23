@@ -94,7 +94,7 @@ A full, non-quick `/idea-lab:evaluate-idea` run uses many times the tokens of a 
 
 ## Configuration
 
-All guard behavior lives in [`security/policy.json`](security/policy.json), plain JSON, no restart needed beyond starting a new run. The defaults are safe for most people; the ones worth knowing about:
+All guard behavior lives in [`plugins/idea-lab/security/policy.json`](plugins/idea-lab/security/policy.json), plain JSON, no restart needed beyond starting a new run. The defaults are safe for most people; the ones worth knowing about:
 
 | Key | Default | What it does |
 | --- | --- | --- |
@@ -131,11 +131,11 @@ Be aware of what this does **not** do:
 
 ## Contributing
 
-This is a small, self-contained plugin — most changes are editing one `agents/*.md`, `skills/*/SKILL.md`, or `scripts/*.py` file. Before relying on a change:
+This is a small, self-contained plugin — most changes are editing one `plugins/idea-lab/agents/*.md`, `plugins/idea-lab/skills/*/SKILL.md`, or `plugins/idea-lab/scripts/*.py` file. Before relying on a change:
 
 ```bash
-claude plugin validate .      # catches broken YAML frontmatter and manifest issues
-python3 scripts/selftest.py   # or: python / py -3 — re-run the 48 offline guard checks
+claude plugin validate ./plugins/idea-lab      # catches broken YAML frontmatter and manifest issues
+python3 plugins/idea-lab/scripts/selftest.py   # or: python / py -3 — re-run the 48 offline guard checks
 ```
 
 A stray unescaped `:` in a `description:` field is silently dropped at runtime instead of erroring, so `claude plugin validate` is worth running after any manual frontmatter edit.
