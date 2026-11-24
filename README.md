@@ -2,6 +2,8 @@
 
 A [Claude Code](https://claude.com/claude-code) plugin that puts your idea in front of a panel of AI agents — researchers, a skeptic, an investor, a security reviewer — before you spend a single hour building it.
 
+> **Review before installing.** Plugins run with your own Claude Code permissions. Agents here can browse the web and write files, both scoped by the guards described in [Limitations and security](#limitations-and-security) — read `plugins/idea-lab/agents/` and `plugins/idea-lab/hooks/hooks.json` yourself before trusting it with real work.
+
 ## The problem
 
 Most ideas get built on a gut feeling. Nobody wants to spend a day manually researching competitors, imagining objections, and writing up a case for and against — so that step gets skipped, and the real pressure-testing happens later, in production, the expensive way.
@@ -40,6 +42,21 @@ That one command: restates the idea and its assumptions, runs four research agen
 Everything a run produces lives under `idea-lab/<slug>/` in your project (`brief.md`, `assumptions.md`, `evidence/*.md`, `debate/`, `decision.md`), plus one line appended to `idea-lab/decisions.md` so `/idea-lab:review-decisions` has something to grade later. Agents never touch your actual project files.
 
 Say "should we build X?" or "what could go wrong with this launch?" in plain language and the matching skill triggers on its own; use the commands above when you want a guaranteed, explicit start.
+
+## Project layout
+
+```
+IdeaFend/                              # this repo is the marketplace
+├── .claude-plugin/marketplace.json    # lists the one plugin below
+└── plugins/idea-lab/
+    ├── .claude-plugin/plugin.json     # name, version, author, license
+    ├── agents/      # 14 agents (.md with YAML frontmatter)
+    ├── commands/    # 7 slash commands (.md)
+    ├── skills/      # 7 skills, auto-triggered by description match
+    ├── hooks/hooks.json      # wires the guards below into PreToolUse/PostToolUse/Stop
+    ├── scripts/     # the guards themselves (Python + Bash, stdlib only)
+    └── security/policy.json  # guard configuration
+```
 
 ## Quick start
 
@@ -144,4 +161,4 @@ A stray unescaped `:` in a `description:` field is silently dropped at runtime i
 
 ## License and support
 
-No license file is included yet — ask before reusing or redistributing this outside your own Claude Code setup. There's no public issue tracker for this project at the moment; reach out to the maintainer directly with questions or problems.
+MIT licensed — see [LICENSE](LICENSE). There's no public issue tracker for this project at the moment; reach out to the maintainer directly with questions or problems.
