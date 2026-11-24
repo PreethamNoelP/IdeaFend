@@ -1,6 +1,16 @@
 {
   "description": "Idea-lab guards: web/URL safety, file safety during sessions, evidence gate.",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pyrun.sh\" check-stale-decisions.py"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "WebFetch|WebSearch|mcp__.*(exa|fetch|crawl|scrape|browse|search).*",

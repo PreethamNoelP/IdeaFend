@@ -24,7 +24,7 @@ That one command: restates the idea and its assumptions, runs four research agen
 - **14 specialized agents** that research and argue independently before cross-examining each other, so you get a real panel instead of one model agreeing with itself.
 - **Guards that actually block things**, not just instructions an agent could ignore: a hook stops any fetch to localhost, internal IPs, obfuscated IP forms, wildcard-DNS-rebinding domains, URL shorteners, or pages with credentials/secrets in the URL; a file guard keeps writes inside a scratch folder and blocks reading `.env` or key files during a run; an evidence gate refuses to let a run finish if a research file has no sources.
 - **Nothing external required to run it.** Research uses Claude Code's own built-in web search and fetch. Every guard script is plain Python standard library and Bash — no packages to install, no API key to configure, no account to sign into.
-- **52 offline regression tests** (`/idea-lab:selftest`) you can run yourself to confirm the guards really block what they claim to, on your machine.
+- **55 offline regression tests** (`/idea-lab:selftest`) you can run yourself to confirm the guards really block what they claim to, on your machine.
 - **Checks its own track record.** `/idea-lab:review-decisions` grades past verdicts against what actually happened, so the panel's confidence calibrates over time instead of just repeating itself.
 
 ## How it works
@@ -37,9 +37,11 @@ That one command: restates the idea and its assumptions, runs four research agen
 | `/idea-lab:red-team <plan>` | skeptic + risk-reviewer + architect, then an auditor |
 | `/idea-lab:scout <topic>` | repo-scout + trend-scout + competitor-analyst, then an auditor |
 | `/idea-lab:review-decisions` | grades past logged decisions against real outcomes |
-| `/idea-lab:selftest` | runs the 52 offline checks on the safety guards — no agents, no tokens spent |
+| `/idea-lab:selftest` | runs the 55 offline checks on the safety guards — no agents, no tokens spent |
 
 Everything a run produces lives under `idea-lab/<slug>/` in your project (`brief.md`, `assumptions.md`, `evidence/*.md`, `debate/`, `decision.md`), plus one line appended to `idea-lab/decisions.md` so `/idea-lab:review-decisions` has something to grade later. Agents never touch your actual project files.
+
+That line starts as `outcome: pending`, and nothing forces you to go back and fill in what actually happened — so a `SessionStart` hook nudges you: if a logged decision has sat `pending` for more than 14 days, the next session in that project opens with a short reminder listing it.
 
 Say "should we build X?" or "what could go wrong with this launch?" in plain language and the matching skill triggers on its own; use the commands above when you want a guaranteed, explicit start.
 
@@ -76,7 +78,7 @@ Requires Python 3 (the plugin auto-detects `python3`, `python`, or `py -3`) and 
 Expected output ends with:
 
 ```
-52/52 checks passed
+55/55 checks passed
 ```
 
 Then try it:
@@ -154,7 +156,7 @@ This is a small, self-contained plugin — most changes are editing one `plugins
 
 ```bash
 claude plugin validate ./plugins/idea-lab      # catches broken YAML frontmatter and manifest issues
-python3 plugins/idea-lab/scripts/selftest.py   # or: python / py -3 — re-run the 52 offline guard checks
+python3 plugins/idea-lab/scripts/selftest.py   # or: python / py -3 — re-run the 55 offline guard checks
 ```
 
 A stray unescaped `:` in a `description:` field is silently dropped at runtime instead of erroring, so `claude plugin validate` is worth running after any manual frontmatter edit.
