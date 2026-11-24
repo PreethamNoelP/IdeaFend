@@ -21,6 +21,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "WebFetch|WebSearch|mcp__.*(exa|fetch|crawl|scrape|browse|search).*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pyrun.sh\" scan-injection.py"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

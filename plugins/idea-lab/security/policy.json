@@ -13,6 +13,18 @@
   "url_shorteners": ["bit.ly", "t.co", "tinyurl.com", "goo.gl", "ow.ly", "is.gd", "buff.ly", "rebrand.ly", "cutt.ly", "shorturl.at", "lnkd.in", "t.ly"],
   "block_dns_rebinding_domains": true,
   "dns_rebinding_domains": ["nip.io", "sslip.io", "xip.io", "traefik.me", "lvh.me", "localtest.me", "vcap.me"],
+  "block_prompt_injection_patterns": true,
+  "injection_patterns": [
+    "ignore (all|any|the)? ?(previous|prior|above|earlier) instructions",
+    "disregard (all|any|the)? ?(previous|prior|above|earlier) instructions",
+    "new instructions\\s*:",
+    "system prompt",
+    "<\\s*system\\s*>",
+    "you are now (a|an|in)\\s",
+    "reveal (your|the) (system prompt|instructions)",
+    "do not (tell|inform|mention (this|it) to) the user",
+    "override (your|all) (previous )?(instructions|rules)"
+  ],
   "blocked_extensions": [".exe", ".msi", ".dmg", ".pkg", ".apk", ".bat", ".cmd", ".sh", ".ps1", ".jar", ".scr", ".dll", ".so", ".bin", ".iso", ".deb", ".rpm", ".vbs", ".zip", ".tar", ".gz", ".tgz", ".rar", ".7z"],
   "secret_patterns": [
     "AKIA[0-9A-Z]{16}",
