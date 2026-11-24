@@ -9,5 +9,7 @@
     "validation",
     "agents",
     "security"
-  ]
+  ],
+  "author": { "name": "PreethamNoelP" },
+  "license": "MIT"
 }
