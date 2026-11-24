@@ -24,7 +24,7 @@ That one command: restates the idea and its assumptions, runs four research agen
 - **14 specialized agents** that research and argue independently before cross-examining each other, so you get a real panel instead of one model agreeing with itself.
 - **Guards that actually block things**, not just instructions an agent could ignore: a hook stops any fetch to localhost, internal IPs, obfuscated IP forms, wildcard-DNS-rebinding domains, URL shorteners, or pages with credentials/secrets in the URL; a file guard keeps writes inside a scratch folder and blocks reading `.env` or key files during a run; an evidence gate refuses to let a run finish if a research file has no sources.
 - **Nothing external required to run it.** Research uses Claude Code's own built-in web search and fetch. Every guard script is plain Python standard library and Bash — no packages to install, no API key to configure, no account to sign into.
-- **55 offline regression tests** (`/idea-lab:selftest`) you can run yourself to confirm the guards really block what they claim to, on your machine.
+- **59 offline regression tests** (`/idea-lab:selftest`) you can run yourself to confirm the guards really block what they claim to, on your machine.
 - **Checks its own track record.** `/idea-lab:review-decisions` grades past verdicts against what actually happened, so the panel's confidence calibrates over time instead of just repeating itself.
 
 ## How it works
@@ -37,7 +37,7 @@ That one command: restates the idea and its assumptions, runs four research agen
 | `/idea-lab:red-team <plan>` | skeptic + risk-reviewer + architect, then an auditor |
 | `/idea-lab:scout <topic>` | repo-scout + trend-scout + competitor-analyst, then an auditor |
 | `/idea-lab:review-decisions` | grades past logged decisions against real outcomes |
-| `/idea-lab:selftest` | runs the 55 offline checks on the safety guards — no agents, no tokens spent |
+| `/idea-lab:selftest` | runs the 59 offline checks on the safety guards — no agents, no tokens spent |
 
 Everything a run produces lives under `idea-lab/<slug>/` in your project (`brief.md`, `assumptions.md`, `evidence/*.md`, `debate/`, `decision.md`), plus one line appended to `idea-lab/decisions.md` so `/idea-lab:review-decisions` has something to grade later. Agents never touch your actual project files.
 
@@ -78,7 +78,7 @@ Requires Python 3 (the plugin auto-detects `python3`, `python`, or `py -3`) and 
 Expected output ends with:
 
 ```
-55/55 checks passed
+59/59 checks passed
 ```
 
 Then try it:
@@ -124,6 +124,8 @@ All guard behavior lives in [`plugins/idea-lab/security/policy.json`](plugins/id
 | `respect_robots_txt` | `true` | Skips pages that disallow automated access. |
 | `block_dns_rebinding_domains` | `true` | Blocks wildcard-DNS services (`nip.io`, `sslip.io`, …) that can be pointed at any IP, including internal ones. |
 | `injection_patterns` | common injection phrasings | Patterns the `PostToolUse` scanner looks for in fetched/searched content; add your own as you see new attempts. |
+| `max_fetch_bytes` | `5000000` (5 MB) | Blocks a fetch whose declared size is over this, so one huge page can't flood an agent's context. |
+| `max_fetches_per_run` | `60` | Caps how many web fetch/search calls one active run can make, so it can't balloon unbounded. |
 
 ## Adding your own search tool (optional)
 
@@ -137,6 +139,8 @@ Agents research with Claude Code's built-in `WebSearch`/`WebFetch` by default. I
 | Blocks URL shorteners, look-alike domains, credentials in URLs, executable downloads, non-web schemes | Yes | `guard-web.py` + `security/policy.json` |
 | Respects robots.txt | Yes | `guard-web.py` |
 | Blocks secrets in search queries and URLs | Yes | `guard-web.py` |
+| Blocks a fetch whose declared size is over 5 MB (best-effort: trusts the server's own `Content-Length`) | Yes | `guard-web.py` |
+| Caps how many fetches/searches one active run can make (default 60) | Yes, while a run is active | `guard-web.py` |
 | Writes only inside `idea-lab/`; no reading `.env` or key files during a run | Yes, while a run is active | `scripts/guard-files.py` |
 | Evidence files must cite sources, a confidence level, and any prompt-injection attempt found | Yes | `scripts/require-evidence.sh` |
 | Flags common prompt-injection phrasing in fetched/searched content ("ignore previous instructions", fake `<system>` tags, etc.) | Yes | `scripts/scan-injection.py` (`PostToolUse`) |
@@ -147,7 +151,8 @@ Be aware of what this does **not** do:
 - It cannot judge whether an ordinary-looking site is trustworthy — it blocks known-bad patterns, not unknown ones. The injection scanner is a pattern match against known phrasing, run *after* the content is already fetched (hooks can't undo a tool call that already ran) — it catches naive, common attempts and misses novel or reworded ones. No filter fully prevents prompt injection; use allowlist mode for the strictest setup and read what agents actually cite.
 - Simulated customer interviews are hypotheses, not evidence of real demand.
 - Direct agent-to-agent debate (agents directly challenging each other rather than the Lead relaying memos) needs Claude Code's experimental agent-teams feature; without it, the Lead passes memos back and forth instead — slower, but it still works.
-- This has been tested offline (`/idea-lab:selftest`, `claude plugin validate`) but not yet confirmed end-to-end in a live multi-hour session.
+- The size cap trusts the fetched server's own declared size (`HEAD` request). A server that doesn't report one, or lies about it, passes through unchecked — confirmed in practice: some sites (`example.com`, `github.com`) simply don't return a size on `HEAD`.
+- Tested offline (`/idea-lab:selftest`, `claude plugin validate`) and the core web guard has been confirmed live in a real session (it actually blocked a loopback fetch and a DNS-rebinding domain, and allowed a normal one) — not yet confirmed across a full multi-hour evaluation run.
 - Review every agent and hook file before installing: plugins run with your own permissions.
 
 ## Contributing
@@ -156,7 +161,7 @@ This is a small, self-contained plugin — most changes are editing one `plugins
 
 ```bash
 claude plugin validate ./plugins/idea-lab      # catches broken YAML frontmatter and manifest issues
-python3 plugins/idea-lab/scripts/selftest.py   # or: python / py -3 — re-run the 55 offline guard checks
+python3 plugins/idea-lab/scripts/selftest.py   # or: python / py -3 — re-run the 59 offline guard checks
 ```
 
 A stray unescaped `:` in a `description:` field is silently dropped at runtime instead of erroring, so `claude plugin validate` is worth running after any manual frontmatter edit.

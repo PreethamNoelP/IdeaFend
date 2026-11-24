@@ -18,6 +18,7 @@ DEFAULTS = {
     "do_not_fetch_domains": [], "allowlist_mode": False, "allowed_domains": [],
     "url_shorteners": [], "blocked_extensions": [], "secret_patterns": [],
     "block_dns_rebinding_domains": True, "dns_rebinding_domains": [],
+    "block_oversized_fetches": True, "max_fetch_bytes": 5_000_000, "max_fetches_per_run": 60,
 }
 URL_KEYS = {"url", "urls", "uri", "link", "links", "href"}
 URL_RE = re.compile(r"(?i)\b(?:https?|ftp|file|data|javascript):[^\s\"'<>]+")
@@ -53,6 +54,42 @@ def extract_urls(tool_input):
         if key and key.lower() in URL_KEYS and not URL_RE.search(text) and text.strip():
             urls.append("https://" + text.strip())
     return urls
+
+
+def project_root():
+    return os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+
+
+def bump_fetch_count(root):
+    """Increment and return this run's allowed-fetch count. None if no lab session is active
+    (the cap only bounds a single run, not all web use); resets when a new session starts."""
+    lab_dir = os.path.join(root, "idea-lab")
+    active_path = os.path.join(lab_dir, ".active")
+    if not os.path.isfile(active_path):
+        return None
+    count_path = os.path.join(lab_dir, ".fetch-count")
+    try:
+        fresh = os.path.isfile(count_path) and os.path.getmtime(count_path) >= os.path.getmtime(active_path)
+        count = int(open(count_path, encoding="utf-8").read().strip()) if fresh else 0
+    except Exception:
+        count = 0
+    count += 1
+    try:
+        with open(count_path, "w", encoding="utf-8") as fh:
+            fh.write(str(count))
+    except Exception:
+        pass
+    return count
+
+
+def _head_content_length(url):
+    req = request.Request(url, method="HEAD", headers={"User-Agent": "idea-lab-guard"})
+    try:
+        with request.urlopen(req, timeout=3) as resp:
+            cl = resp.headers.get("Content-Length")
+            return int(cl) if cl is not None else None
+    except Exception:
+        return None
 
 
 def host_matches(host, domain):
@@ -108,7 +145,7 @@ def robots_allows(url, fetch=None):
     return False, "the site's robots.txt disallows automated access to this path"
 
 
-def check_url(url, policy, fetch=None):
+def check_url(url, policy, fetch=None, head=None):
     """Return a reason string if the URL must be blocked, else None."""
     if len(url) > int(policy["max_url_length"]):
         return "URL is unusually long (possible data smuggling in the address)"
@@ -150,6 +187,10 @@ def check_url(url, policy, fetch=None):
             return f"{domain} is on the do-not-fetch list (restricts automated access); edit security/policy.json to change"
     if policy["allowlist_mode"] and not any(host_matches(host, d) for d in policy["allowed_domains"]):
         return "domain is not on the allowlist (allowlist mode is on)"
+    if policy["block_oversized_fetches"]:
+        length = (head or _head_content_length)(url)
+        if length is not None and length > int(policy["max_fetch_bytes"]):
+            return f"response is {length:,} bytes, over the {int(policy['max_fetch_bytes']):,}-byte limit"
     if policy["respect_robots_txt"]:
         ok, why = robots_allows(url, fetch)
         if not ok:
@@ -168,15 +209,20 @@ def check_secrets(tool_input, policy):
     return None
 
 
-def evaluate(event, policy, fetch=None):
+def evaluate(event, policy, fetch=None, head=None):
     tool_input = event.get("tool_input", {})
     reason = check_secrets(tool_input, policy)
     if reason:
         return reason
     for url in extract_urls(tool_input):
-        reason = check_url(url, policy, fetch)
+        reason = check_url(url, policy, fetch, head)
         if reason:
             return f"{reason}: {url[:120]}"
+    if policy.get("max_fetches_per_run"):
+        count = bump_fetch_count(project_root())
+        if count is not None and count > int(policy["max_fetches_per_run"]):
+            return (f"this run has already made {count} web fetch/search calls "
+                     f"(limit is {policy['max_fetches_per_run']}); start a fresh run or tell the user if you need more")
     return None
 
 

@@ -13,6 +13,9 @@
   "url_shorteners": ["bit.ly", "t.co", "tinyurl.com", "goo.gl", "ow.ly", "is.gd", "buff.ly", "rebrand.ly", "cutt.ly", "shorturl.at", "lnkd.in", "t.ly"],
   "block_dns_rebinding_domains": true,
   "dns_rebinding_domains": ["nip.io", "sslip.io", "xip.io", "traefik.me", "lvh.me", "localtest.me", "vcap.me"],
+  "block_oversized_fetches": true,
+  "max_fetch_bytes": 5000000,
+  "max_fetches_per_run": 60,
   "block_prompt_injection_patterns": true,
   "injection_patterns": [
     "ignore (all|any|the)? ?(previous|prior|above|earlier) instructions",
