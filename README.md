@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="brand/logo-light.svg">
+    <img alt="IdeaFend" src="brand/logo-light.svg" height="72">
+  </picture>
+</p>
+
 # idea-lab
 
 A [Claude Code](https://claude.com/claude-code) plugin that puts your idea in front of a panel of AI agents — researchers, a skeptic, an investor, a security reviewer — before you spend a single hour building it.

@@ -11,5 +11,6 @@
     "security"
   ],
   "author": { "name": "PreethamNoelP" },
-  "license": "MIT"
+  "license": "MIT",
+  "icon": "./icon.svg"
 }
