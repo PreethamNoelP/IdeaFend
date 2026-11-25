@@ -195,7 +195,7 @@ A stray unescaped `:` in a `description:` field is silently dropped at runtime i
 
 ## License and support
 
-MIT licensed — see [LICENSE](LICENSE). There's no public issue tracker for this project at the moment; reach out to the maintainer directly with questions or problems.
+MIT licensed — see [LICENSE](LICENSE). Found a bug or have a question? [Open an issue](https://github.com/PreethamNoelP/IdeaFend/issues).
 
 ---
 
