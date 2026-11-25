@@ -6,9 +6,28 @@
   </picture>
 </p>
 
-# idea-lab
+<h1 align="center">idea-lab</h1>
 
-A [Claude Code](https://claude.com/claude-code) plugin that puts your idea in front of a panel of AI agents — researchers, a skeptic, an investor, a security reviewer — before you spend a single hour building it.
+<p align="center">
+  A <a href="https://claude.com/claude-code">Claude Code</a> plugin that puts your idea in front of a panel of AI agents — researchers, a skeptic, an investor, a security reviewer — before you spend a single hour building it.
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-1B1F3B"></a>
+  <a href="https://github.com/PreethamNoelP/IdeaFend/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/PreethamNoelP/IdeaFend/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-1B1F3B">
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#key-features">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#configuration">Configuration</a> ·
+  <a href="#limitations-and-security">Security</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
+
+---
 
 > **Review before installing.** Plugins run with your own Claude Code permissions. Agents here can browse the web and write files, both scoped by the guards described in [Limitations and security](#limitations-and-security) — read `plugins/idea-lab/agents/` and `plugins/idea-lab/hooks/hooks.json` yourself before trusting it with real work.
 
@@ -177,3 +196,7 @@ A stray unescaped `:` in a `description:` field is silently dropped at runtime i
 ## License and support
 
 MIT licensed — see [LICENSE](LICENSE). There's no public issue tracker for this project at the moment; reach out to the maintainer directly with questions or problems.
+
+---
+
+<p align="center"><sub>MIT licensed · <a href="#idea-lab">Back to top ↑</a></sub></p>
