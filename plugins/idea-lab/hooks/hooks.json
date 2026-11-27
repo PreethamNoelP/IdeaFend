@@ -9,6 +9,15 @@
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pyrun.sh\" check-stale-decisions.py"
           }
         ]
+      },
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/pyrun.sh\" guard-files.py"
+          }
+        ]
       }
     ],
     "PreToolUse": [

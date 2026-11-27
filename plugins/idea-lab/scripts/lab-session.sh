@@ -8,7 +8,7 @@ dir="$root/idea-lab"
 here="$(cd "$(dirname "$0")" && pwd)"
 case "$cmd" in
   start)
-    rm -f "$dir/.active"   # make sure the self-check runs outside any previous session
+    rm -f "$dir/.active" "$dir/.heartbeat"   # make sure the self-check runs outside any previous session
     echo '{"tool_name":"WebFetch","tool_input":{"url":"http://127.0.0.1/"}}' | bash "$here/pyrun.sh" guard-web.py >/dev/null 2>&1
     if [ $? -ne 2 ]; then
       echo "Safety self-check failed: Python 3 was not found (tried python3, python, py -3) or the web guard did not block a test URL. Install Python 3 from python.org, then retry. Refusing to start." >&2
@@ -17,7 +17,7 @@ case "$cmd" in
     mkdir -p "$dir" && date +%s > "$dir/.active" && echo "idea-lab session started (guards verified)"
     ;;
   end)
-    rm -f "$dir/.active" && echo "idea-lab session ended"
+    rm -f "$dir/.active" "$dir/.heartbeat" && echo "idea-lab session ended"
     ;;
   *)
     echo "usage: lab-session.sh start|end" >&2; exit 1

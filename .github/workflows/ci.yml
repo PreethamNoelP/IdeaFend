@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Run offline safety-guard tests (52 checks)
+      - name: Run offline safety-guard tests
         run: python3 plugins/idea-lab/scripts/selftest.py
 
       - uses: actions/setup-node@v4

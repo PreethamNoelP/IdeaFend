@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Idea-lab file guard (PreToolUse hook).
 
-Active only while an idea-lab session is running (marker file idea-lab/.active, valid 3 hours).
+Active only while an idea-lab run is in progress: idea-lab/.active exists and the run has shown
+activity (a write inside idea-lab/ or a web call, recorded in idea-lab/.heartbeat) in the last 45 minutes.
 While active:
   - writes and edits are blocked outside <project>/idea-lab/
   - reads of secret-looking files (.env, keys, credentials) are blocked
-Outside a session it does nothing, so normal development is unaffected.
+Outside a run it does nothing, so normal development is unaffected.
+On SessionStart (startup/clear) it drops the marker of a run that is no longer live.
 Exit 2 = block (reason on stderr), exit 0 = allow.
 """
 import fnmatch, json, os, sys, time
@@ -16,7 +18,9 @@ SECRET_NAMES = [".env", ".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "id_rsa*",
 SECRET_OK = [".env.example", ".env.sample", ".env.template"]
 SECRET_DIRS = [".ssh", ".aws", ".gnupg", ".kube", ".docker"]
 WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
-MAX_AGE = 3 * 3600
+MAX_IDLE = 45 * 60  # keep in sync with the -mmin -45 in require-evidence.sh
+ABANDONED_AFTER = 10 * 60  # a live run in another session heartbeats far more often than this
+PLUGIN_ROOT = os.environ.get("CLAUDE_PLUGIN_ROOT") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def norm_path(path, windows=None):
@@ -32,12 +36,43 @@ def project_root():
     return os.path.normcase(os.path.realpath(norm_path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd())))
 
 
-def session_active(root):
-    marker = os.path.join(root, "idea-lab", ".active")
+def last_activity(root):
+    """Time of the run's start or latest heartbeat; None if no run marker exists."""
+    lab = os.path.join(root, "idea-lab")
     try:
-        return time.time() - os.path.getmtime(marker) < MAX_AGE
+        start = os.path.getmtime(os.path.join(lab, ".active"))
     except OSError:
-        return False
+        return None
+    try:
+        return max(start, os.path.getmtime(os.path.join(lab, ".heartbeat")))
+    except OSError:
+        return start
+
+
+def session_active(root, max_idle=MAX_IDLE):
+    last = last_activity(root)
+    return last is not None and time.time() - last < max_idle
+
+
+def heartbeat(root):
+    path = os.path.join(root, "idea-lab", ".heartbeat")
+    try:
+        with open(path, "a", encoding="utf-8"):
+            pass
+        os.utime(path, None)
+    except OSError:
+        pass
+
+
+def clear_abandoned(root):
+    """A new Claude Code session cannot continue an old run, so drop its marker unless it is still live."""
+    if session_active(root, ABANDONED_AFTER):
+        return
+    for name in (".active", ".heartbeat"):
+        try:
+            os.remove(os.path.join(root, "idea-lab", name))
+        except OSError:
+            pass
 
 
 def is_secret_path(path):
@@ -84,7 +119,10 @@ def evaluate(event, root):
         target = norm_path(target)
         resolved = os.path.normcase(os.path.realpath(target if os.path.isabs(target) else os.path.join(root, target)))
         if not (resolved + os.sep).startswith(os.path.normcase(allowed)):
-            return f"during an idea-lab session, writes are allowed only inside idea-lab/ (tried: {target})"
+            unlock = os.path.join(PLUGIN_ROOT, "scripts", "lab-session.sh").replace("\\", "/")
+            return (f"during an idea-lab run, writes are allowed only inside idea-lab/ (tried: {target}). "
+                    f"If no run is in progress (an earlier one was interrupted), ask the user, then run: bash \"{unlock}\" end")
+        heartbeat(root)
         return None
     paths, globs = candidate_paths(tool, tool_input)
     for path in paths:
@@ -101,7 +139,11 @@ def main():
         event = json.load(sys.stdin)
     except Exception:
         return 0
-    reason = evaluate(event, project_root())
+    root = project_root()
+    if event.get("hook_event_name") == "SessionStart":
+        clear_abandoned(root)
+        return 0
+    reason = evaluate(event, root)
     if reason:
         print(f"Idea-lab file guard blocked this call: {reason}.", file=sys.stderr)
         return 2

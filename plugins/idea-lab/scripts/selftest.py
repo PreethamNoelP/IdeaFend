@@ -113,9 +113,25 @@ check("active: blocks grep over .env glob", ev("Grep", pattern="KEY", glob=".env
 check("active: allows broad Glob **/*.py", ev("Glob", pattern="**/*.py") is not None, False)
 check("active: allows Grep for the word 'secret' in code", ev("Grep", pattern="secret", path=os.path.join(root, "src")) is not None, False)
 check("active: blocks Glob for **/*.pem", ev("Glob", pattern="**/*.pem") is not None, True)
+marker, beat = os.path.join(root, "idea-lab", ".active"), os.path.join(root, "idea-lab", ".heartbeat")
+check("allowed idea-lab/ write records a heartbeat", os.path.isfile(beat), True)
+blocked = ev("Write", file_path=os.path.join(root, "src/app.py")) or ""
+check("blocked write says how to unlock an interrupted run", "lab-session.sh" in blocked and " end" in blocked, True)
 old = time.time() - 4 * 3600
-os.utime(os.path.join(root, "idea-lab", ".active"), (old, old))
-check("stale session marker expires", ev("Write", file_path=os.path.join(root, "src/app.py")) is not None, False)
+os.utime(marker, (old, old))
+os.utime(beat, None)
+check("recent activity keeps a long run active", ev("Write", file_path=os.path.join(root, "src/app.py")) is not None, True)
+os.utime(beat, (old, old))
+check("idle run expires", ev("Write", file_path=os.path.join(root, "src/app.py")) is not None, False)
+
+# ---- new Claude Code session clears abandoned runs but not live ones
+os.utime(beat, None)
+files.clear_abandoned(root)
+check("new session keeps a live run", os.path.isfile(marker), True)
+idle = time.time() - 20 * 60
+os.utime(beat, (idle, idle))
+files.clear_abandoned(root)
+check("new session clears an abandoned run", os.path.isfile(marker) or os.path.isfile(beat), False)
 
 check("Windows path /c/Users/x becomes C:/Users/x", files.norm_path("/c/Users/x", True) == "C:/Users/x", True)
 check("Windows path normalisation leaves normal paths alone", files.norm_path("/home/u/x", False) == "/home/u/x", True)
@@ -152,7 +168,41 @@ clean_event = {"tool_name": "WebFetch", "tool_input": {"url": "https://example.c
 for _ in range(3):
     web.evaluate(clean_event, count_policy)
 check("blocks once a run exceeds its fetch-count cap", web.evaluate(clean_event, count_policy) is not None, True)
+check("web calls record a heartbeat", os.path.isfile(os.path.join(count_root, "idea-lab", ".heartbeat")), True)
+idle_root = tempfile.mkdtemp()
+os.makedirs(os.path.join(idle_root, "idea-lab"))
+idle_marker = os.path.join(idle_root, "idea-lab", ".active")
+open(idle_marker, "w").write("0")
+os.utime(idle_marker, (old, old))
+os.environ["CLAUDE_PROJECT_DIR"] = idle_root
+for _ in range(5):
+    web.evaluate(clean_event, count_policy)
+check("fetch cap ignores an idle, abandoned run", web.evaluate(clean_event, count_policy) is not None, False)
 del os.environ["CLAUDE_PROJECT_DIR"]
+
+# ---- evidence gate (Stop hook), needs bash
+import shutil, subprocess
+BASH = shutil.which("bash")  # full path: a bare "bash" on Windows resolves to WSL, which drops our env
+def gate(project):
+    env = dict(os.environ, CLAUDE_PROJECT_DIR=project)
+    script = os.path.join(HERE, "require-evidence.sh").replace("\\", "/")
+    return subprocess.run([BASH, script], input="{}", env=env, capture_output=True, text=True).returncode
+if BASH:
+    gate_root = tempfile.mkdtemp()
+    ev_dir = os.path.join(gate_root, "idea-lab", "slug", "evidence")
+    os.makedirs(ev_dir)
+    run_marker = os.path.join(gate_root, "idea-lab", ".active")
+    open(run_marker, "w").write("0")
+    os.utime(run_marker, (time.time() - 3 * 3600,) * 2)
+    open(os.path.join(gate_root, "idea-lab", ".heartbeat"), "w").close()
+    early = os.path.join(ev_dir, "demand.md")
+    open(early, "w").write("Claim: unsourced\n")
+    os.utime(early, (time.time() - 150 * 60,) * 2)
+    check("evidence gate still checks files from early in a long run", gate(gate_root) == 2, True)
+    os.remove(run_marker)
+    check("evidence gate ignores old files once no run is live", gate(gate_root) == 0, True)
+else:
+    print("SKIP evidence gate checks (bash not found)")
 
 # ---- stale-decision reminder (SessionStart)
 import datetime as _dt

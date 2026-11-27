@@ -5,11 +5,15 @@ Blocks risky URLs and secret-looking strings in web and search tool calls.
 Reads the hook event as JSON on stdin. Exit 2 = block (reason on stderr), exit 0 = allow.
 Policy lives in security/policy.json. If the policy file is unreadable, strict defaults apply.
 """
-import hashlib, ipaddress, json, os, re, sys, tempfile, time
+import hashlib, importlib.util, ipaddress, json, os, re, sys, tempfile, time
 from urllib import error, request, robotparser
 from urllib.parse import urlparse
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# One definition of "a run is active", shared with the file guard.
+_spec = importlib.util.spec_from_file_location("guard_files", os.path.join(HERE, "scripts", "guard-files.py"))
+files = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(files)
 
 DEFAULTS = {
     "block_private_hosts": True, "block_ip_hosts": True, "block_url_shorteners": True,
@@ -56,17 +60,14 @@ def extract_urls(tool_input):
     return urls
 
 
-def project_root():
-    return os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
-
-
 def bump_fetch_count(root):
-    """Increment and return this run's allowed-fetch count. None if no lab session is active
-    (the cap only bounds a single run, not all web use); resets when a new session starts."""
+    """Increment and return this run's allowed-fetch count. None if no run is active
+    (the cap only bounds a single run, not all web use); resets when a new run starts."""
+    if not files.session_active(root):
+        return None
+    files.heartbeat(root)
     lab_dir = os.path.join(root, "idea-lab")
     active_path = os.path.join(lab_dir, ".active")
-    if not os.path.isfile(active_path):
-        return None
     count_path = os.path.join(lab_dir, ".fetch-count")
     try:
         fresh = os.path.isfile(count_path) and os.path.getmtime(count_path) >= os.path.getmtime(active_path)
@@ -219,7 +220,7 @@ def evaluate(event, policy, fetch=None, head=None):
         if reason:
             return f"{reason}: {url[:120]}"
     if policy.get("max_fetches_per_run"):
-        count = bump_fetch_count(project_root())
+        count = bump_fetch_count(files.project_root())
         if count is not None and count > int(policy["max_fetches_per_run"]):
             return (f"this run has already made {count} web fetch/search calls "
                      f"(limit is {policy['max_fetches_per_run']}); start a fresh run or tell the user if you need more")
