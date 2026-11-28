@@ -94,8 +94,8 @@ IdeaFend/                              # this repo is the marketplace
 Requires Python 3 (the plugin auto-detects `python3`, `python`, or `py -3`) and Bash (on Windows: Git for Windows or WSL). No other setup.
 
 ```bash
-# 1. In Claude Code, point it at this repository
-/plugin marketplace add /full/path/to/this/repo
+# 1. In Claude Code, add this repository as a marketplace
+/plugin marketplace add PreethamNoelP/IdeaFend
 
 # 2. Install the plugin
 /plugin install idea-lab@idea-lab-marketplace
